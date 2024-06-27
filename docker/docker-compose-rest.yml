@@ -13,11 +13,9 @@
 version: '3.7'
 networks:
   dspacenet:
-    ipam:
-      config:
-        # Define a custom subnet for our DSpace network, so that we can easily trust requests from host to container.
-        # If you customize this value, be sure to customize the 'proxies.trusted.ipranges' env variable below.
-        - subnet: 172.23.0.0/16
+    external:
+      name: dspace_network
+
 services:
   # DSpace (backend) webapp container
   dspace:
@@ -64,11 +62,13 @@ services:
       while (!</dev/tcp/dspacedb/5432) > /dev/null 2>&1; do sleep 1; done;
       /dspace/bin/dspace database migrate
       catalina.sh run
+
   # DSpace database container    
   dspacedb:
     container_name: dspacedb
     environment:
       PGDATA: /pgdata
+      POSTGRES_HOST_AUTH_METHOD: trust
     image: dspace/dspace-postgres-pgcrypto
     networks:
       dspacenet:
@@ -79,6 +79,7 @@ services:
     tty: true
     volumes:
     - pgdata:/pgdata
+
   # DSpace Solr container  
   dspacesolr:
     container_name: dspacesolr
